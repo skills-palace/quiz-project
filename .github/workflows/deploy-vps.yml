@@ -35,7 +35,7 @@ jobs:
             trap 'echo "deployment script failed at line $LINENO"' ERR
 
             APP_DIR="${DEPLOY_PATH:-/var/www/quiz-project}"
-            SOURCE_REPO="${REPO_URL:-git@github.com:skillpalace/quiz-project.git}"
+            SOURCE_REPO="${REPO_URL:-https://github.com/skills-palace/quiz-project.git}"
 
             if [ -n "${REPO_DEPLOY_KEY:-}" ]; then
               mkdir -p /root/.ssh
