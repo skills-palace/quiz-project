@@ -27,6 +27,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
+          timeout: 120s
           script_stop: false
           command_timeout: 40m
           envs: BACKEND_ENV_B64,FRONTEND_ENV_LOCAL_B64,REPO_DEPLOY_KEY,REPO_URL,DEPLOY_PATH
