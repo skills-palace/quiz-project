@@ -79,7 +79,7 @@ jobs:
               git reset --hard HEAD
               git clean -fd
             fi
-            git pull --ff-only origin main
+            git reset --hard origin/main
             echo "DEPLOYED_COMMIT=$(git rev-parse --short HEAD)"
 
             if [ -n "${BACKEND_ENV_B64:-}" ]; then
