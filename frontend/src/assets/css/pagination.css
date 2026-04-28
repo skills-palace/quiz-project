@@ -1,0 +1,277 @@
+.rc-paginate {
+  font-size: 14px;
+}
+.rc-paginate ul,
+.rc-paginate ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rc-paginate::after {
+  display: block;
+  clear: both;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  content: " ";
+}
+.rc-paginate-total-text {
+  display: inline-block;
+  height: 28px;
+  margin-right: 8px;
+  line-height: 26px;
+  vertical-align: middle;
+}
+.rc-paginate-item {
+  display: inline-block;
+  min-width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  font-family: Arial;
+  line-height: 26px;
+  text-align: center;
+  vertical-align: middle;
+  list-style: none;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  outline: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.rc-paginate-item a {
+  display: block;
+  padding: 0 6px;
+  color: rgba(0, 0, 0, 0.85);
+  transition: none;
+}
+.rc-paginate-item a:hover {
+  text-decoration: none;
+}
+.rc-paginate-item:focus,
+.rc-paginate-item:hover {
+  border-color: #1890ff;
+  transition: all 0.3s;
+}
+.rc-paginate-item:focus a,
+.rc-paginate-item:hover a {
+  color: #1890ff;
+}
+.rc-paginate-item-active {
+  font-weight: 500;
+  background: #fff;
+  border-color: #1890ff;
+}
+.rc-paginate-item-active a {
+  color: #1890ff;
+}
+.rc-paginate-item-active:focus,
+.rc-paginate-item-active:hover {
+  border-color: #40a9ff;
+}
+.rc-paginate-item-active:focus a,
+.rc-paginate-item-active:hover a {
+  color: #40a9ff;
+}
+.rc-paginate-jump-prev,
+.rc-paginate-jump-next {
+  outline: 0;
+}
+.rc-paginate-jump-prev button,
+.rc-paginate-jump-next button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+.rc-paginate-jump-prev button:after,
+.rc-paginate-jump-next button:after {
+  display: block;
+  content: "•••";
+}
+.rc-paginate-prev,
+.rc-paginate-jump-prev,
+.rc-paginate-jump-next {
+  margin-right: 8px;
+}
+.rc-paginate-prev,
+.rc-paginate-next,
+.rc-paginate-jump-prev,
+.rc-paginate-jump-next {
+  display: inline-block;
+  min-width: 28px;
+  height: 28px;
+  color: rgba(0, 0, 0, 0.85);
+  font-family: Arial;
+  line-height: 28px;
+  text-align: center;
+  vertical-align: middle;
+  list-style: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.rc-paginate-prev,
+.rc-paginate-next {
+  outline: 0;
+}
+.rc-paginate-prev button,
+.rc-paginate-next button {
+  color: rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+  user-select: none;
+}
+.rc-paginate-prev:hover button,
+.rc-paginate-next:hover button {
+  border-color: #40a9ff;
+}
+.rc-paginate-prev .rc-paginate-item-link,
+.rc-paginate-next .rc-paginate-item-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  text-align: center;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  outline: none;
+  transition: all 0.3s;
+}
+.rc-paginate-prev:focus .rc-paginate-item-link,
+.rc-paginate-next:focus .rc-paginate-item-link,
+.rc-paginate-prev:hover .rc-paginate-item-link,
+.rc-paginate-next:hover .rc-paginate-item-link {
+  color: #1890ff;
+  border-color: #1890ff;
+}
+.rc-paginate-prev button:after {
+  content: "‹";
+  display: block;
+}
+.rc-paginate-next button:after {
+  content: "›";
+  display: block;
+}
+.rc-paginate-disabled,
+.rc-paginate-disabled:hover,
+.rc-paginate-disabled:focus {
+  cursor: not-allowed;
+}
+.rc-paginate-disabled .rc-paginate-item-link,
+.rc-paginate-disabled:hover .rc-paginate-item-link,
+.rc-paginate-disabled:focus .rc-paginate-item-link {
+  color: rgba(0, 0, 0, 0.25);
+  border-color: #d9d9d9;
+  cursor: not-allowed;
+}
+.rc-paginate-slash {
+  margin: 0 10px 0 5px;
+}
+.rc-paginate-options {
+  display: inline-block;
+  margin-left: 16px;
+  vertical-align: middle;
+}
+@media all and (-ms-high-contrast: none) {
+  .rc-paginate-options *::-ms-backdrop,
+  .rc-paginate-options {
+    vertical-align: top;
+  }
+}
+.rc-paginate-options-size-changer.rc-select {
+  display: inline-block;
+  width: auto;
+  margin-right: 8px;
+}
+.rc-paginate-options-quick-jumper {
+  display: inline-block;
+  height: 28px;
+  line-height: 28px;
+  vertical-align: top;
+}
+.rc-paginate-options-quick-jumper input {
+  width: 50px;
+  margin: 0 8px;
+}
+.rc-paginate-simple .rc-paginate-prev,
+.rc-paginate-simple .rc-paginate-next {
+  height: 24px;
+  line-height: 24px;
+  vertical-align: top;
+}
+.rc-paginate-simple .rc-paginate-prev .rc-paginate-item-link,
+.rc-paginate-simple .rc-paginate-next .rc-paginate-item-link {
+  height: 24px;
+  background-color: transparent;
+  border: 0;
+}
+.rc-paginate-simple .rc-paginate-prev .rc-paginate-item-link::after,
+.rc-paginate-simple .rc-paginate-next .rc-paginate-item-link::after {
+  height: 24px;
+  line-height: 24px;
+}
+.rc-paginate-simple .rc-paginate-simple-pager {
+  display: inline-block;
+  height: 24px;
+  margin-right: 8px;
+}
+.rc-paginate-simple .rc-paginate-simple-pager input {
+  box-sizing: border-box;
+  height: 100%;
+  margin-right: 8px;
+  padding: 0 6px;
+  text-align: center;
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.rc-paginate-simple .rc-paginate-simple-pager input:hover {
+  border-color: #1890ff;
+}
+.rc-paginate.rc-paginate-disabled {
+  cursor: not-allowed;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item {
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+  cursor: not-allowed;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item a {
+  color: rgba(0, 0, 0, 0.25);
+  background: transparent;
+  border: none;
+  cursor: not-allowed;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item-active {
+  background: #dbdbdb;
+  border-color: transparent;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item-active a {
+  color: #fff;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item-link {
+  color: rgba(0, 0, 0, 0.25);
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+  cursor: not-allowed;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item-link-icon {
+  opacity: 0;
+}
+.rc-paginate.rc-paginate-disabled .rc-paginate-item-ellipsis {
+  opacity: 1;
+}
+@media only screen and (max-width: 992px) {
+  .rc-paginate-item-after-jump-prev,
+  .rc-paginate-item-before-jump-next {
+    display: none;
+  }
+}
+@media only screen and (max-width: 576px) {
+  .rc-paginate-options {
+    display: none;
+  }
+}

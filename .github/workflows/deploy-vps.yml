@@ -1,0 +1,224 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_ENV_B64: ${{ secrets.BACKEND_ENV_B64 }}
+      FRONTEND_ENV_LOCAL_B64: ${{ secrets.FRONTEND_ENV_LOCAL_B64 }}
+      REPO_DEPLOY_KEY: ${{ secrets.REPO_DEPLOY_KEY }}
+      REPO_URL: ${{ secrets.REPO_URL }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+    steps:
+      - name: Deploy app on VPS over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script_stop: false
+          command_timeout: 40m
+          envs: BACKEND_ENV_B64,FRONTEND_ENV_LOCAL_B64,REPO_DEPLOY_KEY,REPO_URL,DEPLOY_PATH
+          script: |
+            set -ex
+            trap 'echo "deployment script failed at line $LINENO"' ERR
+
+            APP_DIR="${DEPLOY_PATH:-/var/www/quiz-project}"
+            SOURCE_REPO="${REPO_URL:-git@github.com:skillpalace/quiz-project.git}"
+
+            if [ -n "${REPO_DEPLOY_KEY:-}" ]; then
+              mkdir -p /root/.ssh
+              chmod 700 /root/.ssh
+              printf "%s" "$REPO_DEPLOY_KEY" | tr -d '\r' > /root/.ssh/id_ed25519_github_actions
+              chmod 600 /root/.ssh/id_ed25519_github_actions
+              touch /root/.ssh/known_hosts
+              ssh-keyscan github.com >> /root/.ssh/known_hosts
+              export GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519_github_actions -o StrictHostKeyChecking=yes"
+            fi
+
+            if ! command -v git >/dev/null 2>&1; then
+              apt-get update -y
+              apt-get install -y git curl
+            fi
+
+            if ! command -v node >/dev/null 2>&1; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+              apt-get install -y nodejs
+            fi
+
+            PM2_CMD="$(command -v pm2 || true)"
+            if [ -z "$PM2_CMD" ]; then
+              npm install -g pm2
+              PM2_CMD="$(command -v pm2 || true)"
+            fi
+            if [ -z "$PM2_CMD" ]; then
+              PM2_CMD="$(npm prefix -g)/bin/pm2"
+            fi
+
+            mkdir -p "$(dirname "$APP_DIR")"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone --branch main "$SOURCE_REPO" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch origin main
+            git checkout main || git checkout -b main
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "Cleaning local changes in deploy checkout"
+              git reset --hard HEAD
+              git clean -fd
+            fi
+            git pull --ff-only origin main
+            echo "DEPLOYED_COMMIT=$(git rev-parse --short HEAD)"
+
+            if [ -n "${BACKEND_ENV_B64:-}" ]; then
+              echo "$BACKEND_ENV_B64" | base64 -d > backend/.env
+            fi
+            # nginx proxies server-end-point.skillspalace.com → 127.0.0.1:5000
+            if [ -f backend/.env ]; then
+              sed -i '/^PORT=/d' backend/.env
+              echo "PORT=5000" >> backend/.env
+            fi
+
+            if [ -n "${FRONTEND_ENV_LOCAL_B64:-}" ]; then
+              echo "$FRONTEND_ENV_LOCAL_B64" | base64 -d > frontend/.env.local
+            fi
+
+            # Keep uploaded media outside the git working tree so deploys never lose files.
+            PERSISTENT_UPLOADS_DIR="${UPLOADS_PERSIST_PATH:-/var/www/quiz-project-data/uploads}"
+            mkdir -p "$PERSISTENT_UPLOADS_DIR"
+            for LEGACY_UPLOADS_DIR in \
+              "$APP_DIR/uploads" \
+              "$APP_DIR/server/uploads" \
+              "$APP_DIR/backend/server/uploads" \
+              "/var/www/quiz-project/uploads" \
+              "/var/www/quiz-project/server/uploads" \
+              "/var/www/uploads" \
+              "/root/uploads"
+            do
+              if [ -d "$LEGACY_UPLOADS_DIR" ] && [ "$LEGACY_UPLOADS_DIR" != "$PERSISTENT_UPLOADS_DIR" ]; then
+                echo "RECOVER_UPLOADS_FROM=$LEGACY_UPLOADS_DIR"
+                cp -a "$LEGACY_UPLOADS_DIR/." "$PERSISTENT_UPLOADS_DIR/" || true
+              fi
+            done
+            if [ -e "$APP_DIR/backend/uploads" ] && [ ! -L "$APP_DIR/backend/uploads" ]; then
+              mkdir -p "$PERSISTENT_UPLOADS_DIR"
+              cp -a "$APP_DIR/backend/uploads/." "$PERSISTENT_UPLOADS_DIR/" || true
+              rm -rf "$APP_DIR/backend/uploads"
+            fi
+            ln -sfn "$PERSISTENT_UPLOADS_DIR" "$APP_DIR/backend/uploads"
+            mkdir -p "$APP_DIR/backend/uploads/audios"
+            echo "UPLOADS_LINK_TARGET=$(readlink -f "$APP_DIR/backend/uploads" || true)"
+            echo "UPLOADS_FILE_COUNT=$(ls -1 "$PERSISTENT_UPLOADS_DIR" 2>/dev/null | wc -l || true)"
+
+            # Enforce live frontend API settings on every deployment.
+            if [ -f frontend/.env.local ]; then
+              sed -i '/^NEXT_PUBLIC_BASE_URL=/d' frontend/.env.local
+              sed -i '/^BASE_URL=/d' frontend/.env.local
+              sed -i '/^NEXTAUTH_URL=/d' frontend/.env.local
+            fi
+            {
+              echo "NEXT_PUBLIC_BASE_URL=https://server-end-point.skillspalace.com"
+              echo "BASE_URL=https://server-end-point.skillspalace.com"
+              echo "NEXTAUTH_URL=https://skillspalce.com"
+            } >> frontend/.env.local
+
+            cd backend
+            npm install
+            if ! npm run build; then
+              if [ -f build/src/app.js ]; then
+                echo "backend build failed; using existing compiled output in build/"
+              else
+                echo "backend build failed and build/src/app.js is missing"
+                exit 1
+              fi
+            fi
+
+            "$PM2_CMD" delete quiz-backend >/dev/null 2>&1 || true
+            export PORT=5000
+            export DNS_SERVERS="${DNS_SERVERS:-8.8.8.8,1.1.1.1}"
+            "$PM2_CMD" start "node build/src/app.js" --name quiz-backend --cwd "$APP_DIR/backend"
+
+            echo "PUBLIC_IPV4_FOR_ATLAS=$(curl -fsS --max-time 8 https://api.ipify.org || true)"
+            echo "Waiting for quiz-backend HTTP on :5000 (health does not require DB)..."
+            for i in $(seq 1 30); do
+              if curl -fsS --max-time 2 "http://127.0.0.1:5000/api/health" >/dev/null 2>&1; then
+                echo "quiz-backend smoke check OK (GET /api/health)"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "quiz-backend failed to accept HTTP on port 5000 (check PORT vs nginx and PM2 logs)."
+                "$PM2_CMD" logs quiz-backend --lines 80 --nostream || true
+                exit 1
+              fi
+              sleep 2
+            done
+
+            cd ../frontend
+            echo "AXIOS_SOURCE_PREVIEW"
+            grep -n "resolvePublicBaseUrl\\|FALLBACK_LIVE_BASE_URL\\|localhost:5004" src/lib/axiosApi.js || true
+            npm install --legacy-peer-deps
+            rm -rf .next
+            export NEXT_PUBLIC_BASE_URL="https://server-end-point.skillspalace.com"
+            export BASE_URL="https://server-end-point.skillspalace.com"
+            export NEXTAUTH_URL="https://skillspalce.com"
+            echo "Using NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL for frontend build"
+            npm run build
+            if grep -R -n "localhost:5004" ".next/static/chunks"; then
+              echo "frontend build still contains localhost:5004 API references"
+              exit 1
+            fi
+            echo "BUILT_APP_CHUNK_FILES"
+            ls -1 .next/static/chunks/pages/_app-*.js || true
+            BUILT_APP_CHUNK_FILE="$(ls -1 .next/static/chunks/pages/_app-*.js | head -n 1)"
+            if [ -n "$BUILT_APP_CHUNK_FILE" ]; then
+              echo "BUILT_APP_CHUNK_FILE=$BUILT_APP_CHUNK_FILE"
+              grep -n "localhost:5004" "$BUILT_APP_CHUNK_FILE" || true
+              md5sum "$BUILT_APP_CHUNK_FILE" || true
+            fi
+
+            "$PM2_CMD" delete quiz-frontend >/dev/null 2>&1 || true
+            if command -v fuser >/dev/null 2>&1; then
+              fuser -k 3000/tcp || true
+            fi
+            "$PM2_CMD" start "npm run start -- -p 3000 -H 0.0.0.0" --name quiz-frontend --cwd "$APP_DIR/frontend"
+
+            "$PM2_CMD" save
+
+            echo "===== ROUTING CHECK ====="
+            echo "LOCALHOST:3000 APP CHUNK"
+            LOCAL_APP_CHUNK_PATH="$(curl -s http://127.0.0.1:3000 | grep -oE "/_next/static/chunks/pages/_app-[^\"]+\\.js" | head -n 1)"
+            echo "$LOCAL_APP_CHUNK_PATH"
+            if [ -n "$LOCAL_APP_CHUNK_PATH" ]; then
+              curl -s "http://127.0.0.1:3000$LOCAL_APP_CHUNK_PATH" | grep -n "localhost:5004" || true
+              curl -s "http://127.0.0.1:3000$LOCAL_APP_CHUNK_PATH" | md5sum || true
+            fi
+            echo "PUBLIC DOMAIN APP CHUNK"
+            PUBLIC_APP_CHUNK_PATH="$(curl -s https://skillspalace.com | grep -oE "/_next/static/chunks/pages/_app-[^\"]+\\.js" | head -n 1)"
+            echo "$PUBLIC_APP_CHUNK_PATH"
+            if [ -n "$PUBLIC_APP_CHUNK_PATH" ]; then
+              curl -s "https://skillspalace.com$PUBLIC_APP_CHUNK_PATH" | grep -n "localhost:5004" || true
+              curl -s "https://skillspalace.com$PUBLIC_APP_CHUNK_PATH" | md5sum || true
+            fi
+
+            echo "===== API SMOKE CHECK ====="
+            if ! curl -fsS --max-time 15 "https://server-end-point.skillspalace.com/api/lesson?page=1&limit=1" >/dev/null; then
+              echo "Public API lesson endpoint is failing after deploy"
+              "$PM2_CMD" status || true
+              echo "===== quiz-backend recent logs ====="
+              "$PM2_CMD" logs quiz-backend --lines 200 --nostream || true
+              echo "===== localhost lesson probe ====="
+              curl -i --max-time 10 "http://127.0.0.1:5000/api/lesson?page=1&limit=1" || true
+              exit 1
+            fi

@@ -1,0 +1,9 @@
+export const user = {
+  fname: "demo",
+  lname: "demo",
+  username: "demo",
+  email: "demo@mail.com",
+  phone: "12345678",
+  password: { type: String, required: true, select: false },
+  refresh_token: { type: String, select: false },
+};

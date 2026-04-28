@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authController = exports.mediaController = exports.optionController = exports.learnGroupController = exports.learnerController = exports.lessonController = exports.quizController = exports.userController = void 0;
+const user_controller_1 = __importDefault(require("./user.controller"));
+exports.userController = user_controller_1.default;
+const quiz_controller_1 = __importDefault(require("./quiz.controller"));
+exports.quizController = quiz_controller_1.default;
+const lesson_controller_1 = __importDefault(require("./lesson.controller"));
+exports.lessonController = lesson_controller_1.default;
+const learner_controller_1 = __importDefault(require("./learner.controller"));
+exports.learnerController = learner_controller_1.default;
+const learn_group_controller_1 = __importDefault(require("./learn-group.controller"));
+exports.learnGroupController = learn_group_controller_1.default;
+const option_controller_1 = __importDefault(require("./option.controller"));
+exports.optionController = option_controller_1.default;
+const media_controller_1 = __importDefault(require("./media.controller"));
+exports.mediaController = media_controller_1.default;
+const auth_controller_1 = __importDefault(require("./auth.controller"));
+exports.authController = auth_controller_1.default;

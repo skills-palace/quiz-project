@@ -1,0 +1,14 @@
+backend/.env
+frontend/.env.local
+
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build / cache
+.next/
+dist/
+.cache/
+
+# Accidental nested copy of the repo (do not commit)
+/quiz-project/

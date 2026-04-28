@@ -1,0 +1,44 @@
+name: Debug VPS Routing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect nginx and pm2 routes
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script_stop: false
+          command_timeout: 20m
+          script: |
+            set -eux
+
+            echo "===== PM2 LIST ====="
+            pm2 list || true
+
+            echo "===== QUIZ FRONTEND DESCRIBE ====="
+            pm2 describe quiz-frontend || true
+
+            echo "===== LOCALHOST:3000 HEAD ====="
+            curl -I http://127.0.0.1:3000 || true
+
+            echo "===== LOCALHOST:3000 APP CHUNK ====="
+            curl -s http://127.0.0.1:3000 | grep -oE "/_next/static/chunks/pages/_app-[^\"]+\\.js" || true
+
+            echo "===== LIVE DOMAIN HEAD ====="
+            curl -I https://skillspalace.com || true
+
+            echo "===== LIVE DOMAIN APP CHUNK ====="
+            curl -s https://skillspalace.com | grep -oE "/_next/static/chunks/pages/_app-[^\"]+\\.js" || true
+
+            echo "===== NGINX SITE CONFIGS ====="
+            ls -la /etc/nginx/sites-enabled || true
+
+            echo "===== NGINX SKILLSPALACE SEARCH ====="
+            grep -R -n "skillspalace.com\\|skillspalce.com\\|proxy_pass\\|root " /etc/nginx/sites-enabled /etc/nginx/conf.d || true
