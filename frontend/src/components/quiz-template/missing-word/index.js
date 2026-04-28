@@ -7,6 +7,19 @@ import AudioPlayer from "../auidioPlayer";
 import QuestionTitleSpeechBar from "../QuestionTitleSpeechBar";
 import { applyMoveToItems } from "./applyMove";
 
+/** First blank in sentence order with no word placed. */
+function findFirstEmptyBlankId(quiz, itemsState) {
+  if (!quiz?.quizes) {
+    return null;
+  }
+  for (const q of quiz.quizes) {
+    if (q.type === "word" && itemsState[q.id] == null) {
+      return q.id;
+    }
+  }
+  return null;
+}
+
 function Layout7({ nextQ, quiz }) {
   const [items, setItems] = useState(quiz.meta);
   const [error, setError] = useState("");
@@ -27,6 +40,12 @@ function Layout7({ nextQ, quiz }) {
   const handleBankWordClick = (item) => {
     if (focusedBlankId != null && items[focusedBlankId] == null) {
       runMove(item.id, focusedBlankId);
+      clearSelection();
+      return;
+    }
+    const firstEmpty = findFirstEmptyBlankId(quiz, items);
+    if (firstEmpty != null) {
+      runMove(item.id, firstEmpty);
       clearSelection();
       return;
     }
@@ -115,8 +134,8 @@ function Layout7({ nextQ, quiz }) {
         }
       >
         {quizTitleDirection === "rtl"
-          ? "انقر على فراغ ثم على كلمة من البنك (أو العكس). انقر على الكلمة داخل الفراغ لإرجاعها."
-          : "Tap a blank, then a word in the bank (or the reverse). Tap a word in a blank to return it."}
+          ? "انقر كلمة في البنك لتضعها تلقائياً في أول فراغ فارغ. أو انقر فراغاً محدداً ثم كلمة. انقر الكلمة داخل الفراغ لإرجاعها إلى البنك."
+          : "Tap a word in the bank to drop it into the next empty blank (reading order). Or tap a specific blank first, then a word. Tap a word in a blank to send it back to the bank."}
       </p>
       <div>
         <ItemBox

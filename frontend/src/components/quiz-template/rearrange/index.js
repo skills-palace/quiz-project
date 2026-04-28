@@ -2,16 +2,17 @@ import React, { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
-  rectIntersection,
+  closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 import Quizes from "./Quizes";
-import Item from "./DragItem";
+import { RearrangeItemCard } from "./DragItem";
 
 import { Text } from "@/components/StyledComponents";
 import {
@@ -25,7 +26,9 @@ export default function App({ quiz, nextQ }) {
   const [activeItem, setActiveItem] = useState();
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -38,8 +41,9 @@ export default function App({ quiz, nextQ }) {
 
   return (
     <DndContext
+      modifiers={[restrictToHorizontalAxis]}
       sensors={sensors}
-      collisionDetection={rectIntersection}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -71,9 +75,18 @@ export default function App({ quiz, nextQ }) {
         >
           {quiz.title}
         </Text>
+        <p
+          className={`pb-3 text-sm text-gray-600 ${
+            layoutDir === "rtl" ? "text-right font-naskh" : "text-left font-sans"
+          }`}
+        >
+          {layoutDir === "rtl"
+            ? "اسحب الكلمات أفقياً لترتيب الجملة. مرّر الصف أفقياً إذا لم تتسع كل الكلمات."
+            : "Drag words horizontally to build your sentence. Scroll the row sideways if words don’t all fit."}
+        </p>
         {/* Draggable Quiz Items */}
         <div className="">
-          <Quizes items={items} />
+          <Quizes items={items} layoutDir={layoutDir} />
         </div>
 
         {/* Submit Button */}
@@ -99,11 +112,11 @@ export default function App({ quiz, nextQ }) {
       
 
       {/* Dragging Overlay */}
-      {activeItem && (
-        <DragOverlay>
-          <Item id={activeItem.id} item={activeItem} />
+      {activeItem ? (
+        <DragOverlay dropAnimation={null}>
+          <RearrangeItemCard item={activeItem} forOverlay />
         </DragOverlay>
-      )}
+      ) : null}
     </DndContext>
   );
 

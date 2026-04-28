@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
-  rectIntersection,
+  closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -11,7 +11,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 import Quizes from "./Quizes";
-import Item from "./DragItem";
+import { ReorderItemCard } from "./DragItem";
 import { Text } from "@/components/StyledComponents";
 import { layoutDirectionForSequencedQuiz } from "@/utils/detectDirection";
 import AudioPlayer from "../auidioPlayer";
@@ -22,7 +22,9 @@ export default function App({ quiz, nextQ }) {
   const [activeItem, setActiveItem] = useState(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -36,7 +38,7 @@ export default function App({ quiz, nextQ }) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={rectIntersection}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -64,6 +66,15 @@ export default function App({ quiz, nextQ }) {
         >
           {quiz.title}
         </Text>
+        <p
+          className={`pb-3 text-sm text-gray-600 ${
+            layoutDir === "rtl" ? "text-right font-naskh" : "text-left font-sans"
+          }`}
+        >
+          {layoutDir === "rtl"
+            ? "اضغط على الصف بالكامل واسحبه لترتيب العناصر."
+            : "Press and drag anywhere on each row to reorder."}
+        </p>
 
         <div className="w-full md:w-3/3">
           <Quizes items={items} />
@@ -86,13 +97,11 @@ export default function App({ quiz, nextQ }) {
         </div>
       </div>
 
-      {activeItem && (
-        <DragOverlay>
-          <div className="">
-            <Item id={activeItem.id} item={activeItem} />
-          </div>
+      {activeItem ? (
+        <DragOverlay dropAnimation={null}>
+          <ReorderItemCard item={activeItem} forOverlay />
         </DragOverlay>
-      )}
+      ) : null}
     </DndContext>
   );
 
