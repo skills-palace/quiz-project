@@ -30,13 +30,14 @@ const generateGroupSort_1 = require("../utils/generateGroupSort");
 const generateClassification_1 = require("../utils/generateClassification");
 const generateLineConnecting_1 = require("../utils/generateLineConnecting");
 const generateReorderQuestions_1 = require("../utils/generateReorderQuestions");
+const quiz_types_1 = require("../constants/quiz-types");
 const openai = new openai_1.default({
     apiKey: process.env.OPENAI_API_KEY || "",
 });
 const quizController = {
     index(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { page, title, status, limit, sort } = req.query;
+            const { page, title, status, limit, sort, type } = req.query;
             const { _id, role } = req.user;
             const query = {};
             const sortBy = { _id: -1 };
@@ -46,6 +47,11 @@ const quizController = {
                 query.title = { $regex: title, $options: "i" };
             if (status)
                 query.status = status;
+            const typeTrim = typeof type === "string" ? type.trim() : "";
+            if (typeTrim &&
+                quiz_types_1.ALLOWED_QUIZ_LIST_TYPES.includes(typeTrim)) {
+                query.type = typeTrim;
+            }
             if (sort === "asc")
                 sortBy._id = 1;
             const _page = +page || 1;

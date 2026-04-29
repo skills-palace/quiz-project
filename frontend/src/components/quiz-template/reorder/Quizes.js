@@ -6,13 +6,18 @@ import {
 
 import SortableItem from "./DragItem";
 
-export default function Quizes({ items }) {
+export default function Quizes({ items, layoutDir }) {
   const ids = useMemo(() => items.map((item) => item.id), [items]);
   return (
     <SortableContext items={ids} strategy={verticalListSortingStrategy}>
       <div className="question_wrapper flex w-full max-w-full flex-col gap-2 rounded-lg border border-blue-300 bg-blue-100 p-2 sm:p-3 md:gap-3 md:p-4">
         {items.map((item) => (
-          <SortableItem key={item.id} id={item.id} item={item} />
+          <SortableItem
+            key={item.id}
+            id={item.id}
+            item={item}
+            layoutDir={layoutDir}
+          />
         ))}
       </div>
     </SortableContext>

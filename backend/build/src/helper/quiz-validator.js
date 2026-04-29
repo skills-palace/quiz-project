@@ -1,5 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const ordersMatch = (a, b) => Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((id, i) => id === b[i]);
 const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
     let mark = 0;
     let obtainMark = 0;
@@ -39,10 +43,10 @@ const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
         return { quiz_items: validate, mark, obtainMark };
     }
     if (type == "rearrange" || type == "reorder" || type === "word_bank") {
-        const alts = Array.isArray(opts && opts.alternativeSequences)
+        const primaryOrder = (mainQuiz || []).map((q) => q.id);
+        const alts = Array.isArray(opts === null || opts === void 0 ? void 0 : opts.alternativeSequences)
             ? opts.alternativeSequences
             : [];
-        const primaryOrder = (mainQuiz || []).map((q) => q.id);
         const sameLen = (seq) => seq && seq.length === primaryOrder.length;
         const seen = new Set();
         const uniqueOrders = [];
@@ -55,14 +59,12 @@ const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
             seen.add(k);
             uniqueOrders.push(seq);
         }
-        const userIds = userAnswers || [];
-        const ordersMatch = (a, b) => a.length === b.length && a.every((id, i) => id === b[i]);
+        const userIds = (userAnswers || []);
         const fullMatch = uniqueOrders.some((ord) => ordersMatch(ord, userIds));
         const correctWords = (mainQuiz || []).map((q) => q === null || q === void 0 ? void 0 : q.title).filter(Boolean);
         const toSentence = (idSeq) => idSeq
-            .map((id) => (mainQuiz || []).find((q) => q.id === id))
-            .filter((q) => q)
-            .map((q) => q.title)
+            .map((id) => { var _a; return (_a = (mainQuiz || []).find((q) => q.id === id)) === null || _a === void 0 ? void 0 : _a.title; })
+            .filter(Boolean)
             .join(" ");
         const correctTexts = uniqueOrders.map((ord) => toSentence(ord));
         const validate = (userAnswers || []).map((answer, idx) => {
@@ -108,21 +110,26 @@ const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
         const allWord = mainQuiz.filter((ele) => ele.type === "word");
         const answers = userAnswers.slice(); // Clone userAnswers to avoid modifying the original
         const validate = mainQuiz.map((quiz) => {
+            var _a, _b;
             if (quiz.type === "word") {
                 const answer = answers[0]; // Get the first answer
                 if (answer) {
-                    const ansWord = mainQuiz.find((word) => word.id === answer);
-                    const currWord = allWord[0]; // Get the first word in allWord
+                    const ansWord = mainQuiz.find((w) => w.id === answer);
+                    const currWord = allWord[0]; // Slot (correct word) in sentence order
                     const isRight = (currWord === null || currWord === void 0 ? void 0 : currWord.id) === answer;
+                    // Slot's mark, not the tile type (a blank may hold a wrong_word token)
+                    const slotMark = (_a = currWord === null || currWord === void 0 ? void 0 : currWord.mark) !== null && _a !== void 0 ? _a : 0;
                     if (isRight) {
-                        obtainMark += ansWord.mark;
-                        mark += ansWord.mark;
+                        obtainMark += slotMark;
+                        mark += slotMark;
                     }
-                    allWord.splice(0, 1); // Remove the processed word
-                    answers.splice(0, 1); // Remove the processed answer
+                    allWord.splice(0, 1);
+                    answers.splice(0, 1);
                     return {
-                        type: ansWord.type,
-                        title: ansWord.title,
+                        id: quiz.id,
+                        // Always the blank's type from `raw` so review UI / answer key stay consistent
+                        type: quiz.type,
+                        title: ansWord === null || ansWord === void 0 ? void 0 : ansWord.title,
                         expectedTitle: currWord === null || currWord === void 0 ? void 0 : currWord.title,
                         status: isRight ? 1 : 0,
                     };
@@ -130,9 +137,10 @@ const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
                 else {
                     // If no answer is available at all
                     return {
+                        id: quiz.id,
                         status: 2,
                         type: quiz.type,
-                        expectedTitle: allWord[0] === null || allWord[0] === void 0 ? void 0 : allWord[0].title,
+                        expectedTitle: (_b = allWord[0]) === null || _b === void 0 ? void 0 : _b.title,
                     };
                 }
             }
@@ -218,7 +226,7 @@ const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
         const allWord = mainQuiz.filter((ele) => ele.type === "word");
         const answers = userAnswers;
         const validate = mainQuiz.map((quiz, idx) => {
-            var _a;
+            var _a, _b;
             if (quiz.type === "word") {
                 const answer = answers[0];
                 if (answer) {
@@ -231,7 +239,7 @@ const quizValidator = (type, mainQuiz, userAnswers, opts = {}) => {
                     answers.splice(0, 1);
                     const exp = Array.isArray(currWord === null || currWord === void 0 ? void 0 : currWord.title) && currWord.title.length
                         ? currWord.title.join(" / ")
-                        : String((currWord === null || currWord === void 0 ? void 0 : currWord.title) ?? "");
+                        : String((_b = currWord === null || currWord === void 0 ? void 0 : currWord.title) !== null && _b !== void 0 ? _b : "");
                     return {
                         type: currWord.type,
                         title: currWord.title,

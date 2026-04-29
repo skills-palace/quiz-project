@@ -19,6 +19,7 @@ import { generateGroupSort } from "../utils/generateGroupSort";
 import { generateClassification } from "../utils/generateClassification";
 import { generateLineConnecting } from "../utils/generateLineConnecting";
 import { generateReorderQuestions } from "../utils/generateReorderQuestions";
+import { ALLOWED_QUIZ_LIST_TYPES } from "../constants/quiz-types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "",
@@ -31,22 +32,32 @@ const quizController = {
       status?: number;
       limit: string;
       sort?: "asc" | "desc";
+      type?: string;
     }
-    const { page, title, status, limit, sort } = req.query as unknown as IQuery;
+    const { page, title, status, limit, sort, type } = req.query as unknown as IQuery;
     const { _id, role } = req.user;
 
     interface IFilter {
-      author: string;
-      title: any;
-      status: number;
+      author?: string;
+      title?: any;
+      status?: number;
+      type?: string;
     }
-    const query = <IFilter>{};
+    const query: IFilter = {};
 
     const sortBy: { _id: any } = { _id: -1 };
 
-    if (!(role == 1)) query.author = _id;
+    if (!(role == 1)) query.author = _id as any;
     if (title) query.title = { $regex: title, $options: "i" };
     if (status) query.status = status;
+    const typeTrim =
+      typeof type === "string" ? type.trim() : "";
+    if (
+      typeTrim &&
+      ALLOWED_QUIZ_LIST_TYPES.includes(typeTrim)
+    ) {
+      query.type = typeTrim;
+    }
 
     if (sort === "asc") sortBy._id = 1;
 

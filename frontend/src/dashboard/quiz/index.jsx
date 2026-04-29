@@ -28,6 +28,7 @@ import Label from '../shared/filter/label';
 
 import { Text } from '@/components/StyledComponents';
 import { detectDirection } from '@/utils/detectDirection';
+import { QUIZ_TYPES } from '@/dashboard/quiz/quiz-types';
 const initdata = {
   result: [],
   total: 0,
@@ -90,6 +91,19 @@ const Lessons = () => {
     //console.log("value", value);
   };
 
+  const handleTypeFilter = (e) => {
+    const value = e.target.value;
+    setFilter((prev) => {
+      const next = { ...prev, page: 1 };
+      if (value === '') {
+        delete next.type;
+      } else {
+        next.type = value;
+      }
+      return next;
+    });
+  };
+
   const handleSearch = debounce((e) => {
     setFilter((prev) => {
       const temp = { ...prev };
@@ -125,6 +139,26 @@ const Lessons = () => {
           <SearchBox onChange={handleSearch} />
           {/* filter */}
           <Filter>
+            <div className="mt-2 px-2 pb-2">
+              <h6 className="mb-2 pt-2 text-sm font-medium text-gray-900">
+                Question type
+              </h6>
+              <select
+                id="quiz-list-type-filter"
+                name="type"
+                aria-label="Filter by question type"
+                value={filter.type ?? ''}
+                onChange={handleTypeFilter}
+                className="w-full max-w-[min(100%,16rem)] rounded-md border border-gray-200 bg-white px-2 py-2 text-sm text-gray-900 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              >
+                <option value="">All types</option>
+                {QUIZ_TYPES.map((item) => (
+                  <option key={item.name} value={item.name}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="mt-2">
               <h6 className="mb-2 px-2 pt-2 text-sm font-medium text-gray-900">
                 Orderby
@@ -275,17 +309,19 @@ const Lessons = () => {
 
                     <TableCell>
                       <div className="flex">
-                        <BiEdit
+                        <button
+                          type="button"
+                          aria-label="Edit quiz in new tab"
                           onClick={() => {
-                            // router.push(`/admin/quiz/edit/${quiz._id}`);
-                            if (pathname.startsWith('/teacher')) {
-                              router.push(`/teacher/quiz/edit/${quiz._id}`);
-                            } else {
-                              router.push(`/admin/quiz/edit/${quiz._id}`);
-                            }
+                            const path = pathname.startsWith('/teacher')
+                              ? `/teacher/quiz/edit/${quiz._id}`
+                              : `/admin/quiz/edit/${quiz._id}`;
+                            window.open(path, '_blank', 'noopener,noreferrer');
                           }}
-                          className="w-6 h-6 cursor-pointer text-gray-600 hover:text-green-300 transition-all"
-                        />
+                          className="rounded p-0.5 text-gray-600 transition-all hover:bg-gray-100 hover:text-green-600 focus-visible:outline focus-visible:ring-2 focus-visible:ring-green-500"
+                        >
+                          <BiEdit className="h-6 w-6" aria-hidden />
+                        </button>
                         <BiTrash
                           onClick={() => toggleRemoveModal(quiz._id)}
                           className="w-6 h-6 cursor-pointer text-gray-600 hover:text-red-400 transition-all"

@@ -15,23 +15,7 @@ import Layout11 from "./blank-space";
 import Layout12 from "./highlight-word";
 import LayoutConsonant from "./consonant-blend";
 import { nanoid } from "nanoid";
-
-const quizTypes = [
-  { title: "Multiple Choice2", name: "multiple_choice2" },
-  { title: "Multiple Choice", name: "multiple_choice" },
-  { title: "Math", name: "math" },
-  { title: "Rearrange", name: "rearrange" },
-  { title: "Word bank", name: "word_bank" },
-  { title: "Missing Word", name: "missing_word" },
-  { title: "Blank Space", name: "blank_space" },
-  { title: "Highlight Word", name: "highlight_word" },
-  { title: "Group Sort", name: "group_sort" },
-  { title: "Classification", name: "classification" },
-  { title: "True False", name: "true_false" },
-  { title: "Reorder", name: "reorder" },
-  { title: "Line connect", name: "line_connect" },
-  { title: "Consonant blend", name: "consonant_blend" },
-];
+import { QUIZ_TYPES as quizTypes } from "@/dashboard/quiz/quiz-types";
 
 const Layouts = () => {
   const { control, unregister, setValue } = useFormContext();

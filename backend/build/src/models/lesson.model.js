@@ -20,7 +20,7 @@ const LessonSchema = new mongoose_1.Schema({
     },
     hideParagraphSide: {
         type: Number,
-        default: 0,
+        default: 1,
         enum: [0, 1],
     },
 }, { timestamps: true });

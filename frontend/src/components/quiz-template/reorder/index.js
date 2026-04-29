@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 import Quizes from "./Quizes";
@@ -23,7 +24,7 @@ export default function App({ quiz, nextQ }) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 6 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -38,6 +39,7 @@ export default function App({ quiz, nextQ }) {
   return (
     <DndContext
       sensors={sensors}
+      modifiers={[restrictToVerticalAxis]}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -62,22 +64,22 @@ export default function App({ quiz, nextQ }) {
             layoutDir === "rtl"
               ? "text-right pb-4 text-gray-800 font-naskh font-semibold sm:text-lg md:text-lg lg:text-xl"
               : "text-left pb-4 text-gray-800 font-sans  font-semibold sm:text-lg md:text-lg lg:text-lg"
-        }`}
+          }`}
         >
           {quiz.title}
         </Text>
         <p
-          className={`pb-3 text-sm text-gray-600 ${
+          className={`pb-3 text-sm leading-relaxed text-gray-600 ${
             layoutDir === "rtl" ? "text-right font-naskh" : "text-left font-sans"
           }`}
         >
           {layoutDir === "rtl"
-            ? "اضغط على الصف بالكامل واسحبه لترتيب العناصر."
-            : "Press and drag anywhere on each row to reorder."}
+            ? "اضغط على أي مكان في الصف واسحبه بالكامل لأعلى أو لأسفل لإعادة الترتيب."
+            : "Press anywhere on a row and drag the whole row up or down to reorder."}
         </p>
 
         <div className="w-full md:w-3/3">
-          <Quizes items={items} />
+          <Quizes items={items} layoutDir={layoutDir} />
         </div>
 
         <div className="mt-6 flex flex-col items-center text-center md:mt-8">
@@ -90,7 +92,7 @@ export default function App({ quiz, nextQ }) {
               layoutDir === "rtl"
                 ? "font-naskh bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-lg md:text-xl lg:text-2xl"
                 : "font-sans bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-lg md:text-xl"
-          }`}
+            }`}
           >
             {layoutDir === "rtl" ? "التالي" : "Submit"}
           </button>
@@ -99,7 +101,7 @@ export default function App({ quiz, nextQ }) {
 
       {activeItem ? (
         <DragOverlay dropAnimation={null}>
-          <ReorderItemCard item={activeItem} forOverlay />
+          <ReorderItemCard item={activeItem} forOverlay layoutDir={layoutDir} />
         </DragOverlay>
       ) : null}
     </DndContext>

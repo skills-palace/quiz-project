@@ -140,11 +140,18 @@ const lessonController = {
                 if (hasBrokenImagePath(lesson.imagePath)) {
                     lesson.imagePath = "";
                 }
-                if (Array.isArray(lesson.quizes) && lesson.quizes.length > 0) {
-                    lesson.quizes = shuffleArray(lesson.quizes);
+                // Normalize: DB legacy / null refs from populate; avoid forEach on null or null quiz entries (500s).
+                let quizes = Array.isArray(lesson.quizes)
+                    ? lesson.quizes.filter((q) => q != null)
+                    : [];
+                if (quizes.length > 0) {
+                    quizes = shuffleArray(quizes);
                 }
+                lesson.quizes = quizes;
                 lesson.quizes.forEach((quiz) => {
                     var _a, _b, _c;
+                    if (!quiz)
+                        return;
                     if (quiz.type === "multiple_choice" ||
                         quiz.type === "multiple_choice2" ||
                         quiz.type === "reorder" ||
@@ -341,7 +348,9 @@ const lessonController = {
                     author: _id,
                     quizes: quizIds,
                     status,
-                    hideParagraphSide: Number(hideParagraphSide !== null && hideParagraphSide !== void 0 ? hideParagraphSide : 0),
+                    hideParagraphSide: hideParagraphSide == null || hideParagraphSide === ""
+                        ? 1
+                        : Number(hideParagraphSide),
                     skill,
                     audioPath,
                     imagePath,

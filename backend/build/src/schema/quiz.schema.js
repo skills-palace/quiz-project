@@ -101,6 +101,7 @@ const schema = joi_1.default.object({
         ],
     })
         .required(),
+    /** Additional valid full id orders (permutations of the same word ids as `quizes`). */
     alternativeSequences: joi_1.default.array()
         .items(joi_1.default.array().items(joi_1.default.string()).min(1))
         .default([])
